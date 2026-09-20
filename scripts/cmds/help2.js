@@ -1,200 +1,253 @@
-const fs = require("fs-extra");
-const axios = require("axios");
-const path = require("path");
 const { getPrefix } = global.utils;
 const { commands, aliases } = global.GoatBot;
-const doNotDelete = "[ ⚡ | 𝐍𝐄𝐗𝐔𝐒 𝐔𝐋𝐓𝐈𝐌𝐀𝐓𝐄 𝐁𝐎𝐓 | ⚡ ]"; 
 
-// Fonction Meta Bold pour tout le texte
-const metaBold = (text) => {
-    const boldMap = {
-        'A': '𝐀', 'B': '𝐁', 'C': '𝐂', 'D': '𝐃', 'E': '𝐄', 'F': '𝐅', 'G': '𝐆',
-        'H': '𝐇', 'I': '𝐈', 'J': '𝐉', 'K': '𝐊', 'L': '𝐋', 'M': '𝐌', 'N': '𝐍',
-        'O': '𝐎', 'P': '𝐏', 'Q': '𝐐', 'R': '𝐑', 'S': '𝐒', 'T': '𝐓', 'U': '𝐔',
-        'V': '𝐕', 'W': '𝐖', 'X': '𝐗', 'Y': '𝐘', 'Z': '𝐙',
-        'a': '𝐚', 'b': '𝐛', 'c': '𝐜', 'd': '𝐝', 'e': '𝐞', 'f': '𝐟', 'g': '𝐠',
-        'h': '𝐡', 'i': '𝐢', 'j': '𝐣', 'k': '𝐤', 'l': '𝐥', 'm': '𝐦', 'n': '𝐧',
-        'o': '𝐨', 'p': '𝐩', 'q': '𝐪', 'r': '𝐫', 's': '𝐬', 't': '𝐭', 'u': '𝐮',
-        'v': '𝐯', 'w': '𝐰', 'x': '𝐱', 'y': '𝐲', 'z': '𝐳',
-        '0': '𝟎', '1': '𝟏', '2': '𝟐', '3': '𝟑', '4': '𝟒',
-        '5': '𝟓', '6': '𝟔', '7': '𝟕', '8': '𝟖', '9': '𝟗'
-    };
-    return text.split('').map(char => boldMap[char] || char).join('');
+// ═══════════════════════════════════════════════════════════
+// ⚙️ IDENTITÉ DU BOT
+// ═══════════════════════════════════════════════════════════
+const BOT_NAME = "𝐒𝐡𝐚𝐝𝐨𝐰 𝐆𝐡𝐨𝐮𝐥";
+const OWNER = "Master Charbel";
+const MAX_MSG = 1800;
+const PER_LINE = 2;
+
+const CATEGORY_THEME = {
+	info:       { icon: "📖", name: "ARCHIVES DE L'ANTEIKU" },
+	fun:        { icon: "🎭", name: "MASQUES & JEUX" },
+	game:       { icon: "🩸", name: "COMBATS DE GHOULS" },
+	games:      { icon: "🩸", name: "COMBATS DE GHOULS" },
+	economy:    { icon: "☕", name: "CAISSE DU CAFÉ" },
+	admin:      { icon: "👑", name: "CONSEIL DES GHOULS" },
+	owner:      { icon: "🩸", name: "LE ROI BORGNE" },
+	ai:         { icon: "👁️", name: "KAKUGAN" },
+	image:      { icon: "🖼️", name: "GALERIE DU MASQUE" },
+	media:      { icon: "🎬", name: "GALERIE DU MASQUE" },
+	video:      { icon: "🎬", name: "GALERIE DU MASQUE" },
+	music:      { icon: "🎻", name: "MÉLODIE DE TOKYO" },
+	utility:    { icon: "🕸️", name: "OUTILS DU CAFÉ" },
+	tools:      { icon: "🕸️", name: "OUTILS DU CAFÉ" },
+	system:     { icon: "⚙️", name: "CELLULES RC" },
+	config:     { icon: "⚙️", name: "CELLULES RC" },
+	group:      { icon: "🏚️", name: "REPAIRE DES GHOULS" },
+	box:        { icon: "🏚️", name: "REPAIRE DES GHOULS" },
+	social:     { icon: "🏚️", name: "REPAIRE DES GHOULS" },
+	anime:      { icon: "🎌", name: "MONDE DES ANIMES" },
+	download:   { icon: "📥", name: "CHASSE AUX FICHIERS" },
+	search:     { icon: "🔍", name: "TRAQUE DES CCG" },
+	education:  { icon: "📚", name: "ÉCOLE DES GHOULS" },
+	moderation: { icon: "🔨", name: "PATROUILLE DE LA CCG" },
+	love:       { icon: "🖤", name: "CŒURS BRISÉS" },
+	rank:       { icon: "🏆", name: "RANGS DE LA CCG" }
 };
 
-// Barre de progression stylisée
-const progressBar = (percentage, width = 30) => {
-    const filled = Math.round((width * percentage) / 100);
-    const empty = width - filled;
-    return '█'.repeat(filled) + '░'.repeat(empty);
+const ROLE_TEXT = {
+	0: "👤 Humains (tout le monde)",
+	1: "🛡️ Gardiens du groupe",
+	2: "👑 Conseil des ghouls (admins du bot)",
+	3: "🩸 Le Roi Borgne (propriétaire)"
 };
 
-module.exports = {
-    config: {
-        name: "help2",
-        version: "3.0",
-        author: "Master Charbel • 𝐍𝐄𝐗𝐔𝐒",
-        countDown: 5,
-        role: 0,
-        shortDescription: {
-            en: "🌀 𝐀𝐟𝐟𝐢𝐜𝐡𝐞 𝐥'𝐚𝐢𝐝𝐞 𝐝𝐮 𝐛𝐨𝐭",
-        },
-        longDescription: {
-            en: "𝐀𝐟𝐟𝐢𝐜𝐡𝐞 𝐥𝐚 𝐥𝐢𝐬𝐭𝐞 𝐝𝐞𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝𝐞𝐬 𝐩𝐚𝐫 𝐜𝐚𝐭é𝐠𝐨𝐫𝐢𝐞",
-        },
-        category: "info",
-        guide: {
-            en: "{pn} : 𝐋𝐢𝐬𝐭𝐞 𝐝𝐞𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝𝐞𝐬\n{pn} <𝐧𝐨𝐦> : 𝐃é𝐭𝐚𝐢𝐥𝐬 𝐝'𝐮𝐧𝐞 𝐜𝐨𝐦𝐦𝐚𝐧𝐝𝐞",
-        },
-        priority: 1,
-    },
+const QUOTES = [
+	"« Je préfère être blessé que de blesser les autres. »",
+	"« Même cassé, je continuerai à avancer. »",
+	"« Un café chaud suffit parfois à réparer une âme. »",
+	"« Le masque ne cache pas qui je suis, il révèle ce que je protège. »",
+	"« Tant que j'ai des amis à défendre, je ne tomberai pas. »",
+	"« La douleur m'a appris à être fort, pas à être cruel. »"
+];
 
-    onStart: async function ({ message, args, event, threadsData, role }) {
-        const { threadID } = event;
-        const threadData = await threadsData.get(threadID);
-        const prefix = getPrefix(threadID);
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const dateStr = now.toLocaleDateString('fr-FR');
+const NOT_FOUND = [
+	"Cette commande a disparu dans le brouillard de Tokyo...",
+	"Même mon kakugan ne la voit pas.",
+	"Elle n'existe pas dans les archives de l'Anteiku."
+];
 
-        const roleTextToString = (role) => {
-            switch (role) {
-                case 0: return "👤 𝐓𝐨𝐮𝐬 𝐥𝐞𝐬 𝐮𝐭𝐢𝐥𝐢𝐬𝐚𝐭𝐞𝐮𝐫𝐬";
-                case 1: return "🛡️ 𝐀𝐝𝐦𝐢𝐧𝐢𝐬𝐭𝐫𝐚𝐭𝐞𝐮𝐫𝐬 𝐝𝐞 𝐠𝐫𝐨𝐮𝐩𝐞";
-                case 2: return "👑 𝐀𝐝𝐦𝐢𝐧𝐢𝐬𝐭𝐫𝐚𝐭𝐞𝐮𝐫 𝐝𝐮 𝐛𝐨𝐭";
-                default: return "❓ 𝐑ô𝐥𝐞 𝐢𝐧𝐜𝐨𝐧𝐧𝐮";
-            }
-        };
-
-        if (args.length === 0) {
-            const categories = {};
-            
-            for (const [name, value] of commands) {
-                if (value.config.role > role) continue; 
-                const category = value.config.category || "𝐔𝐧𝐜𝐚𝐭𝐞𝐠𝐨𝐫𝐢𝐳𝐞𝐝";
-                categories[category] = categories[category] || { commands: [] };
-                categories[category].commands.push(name);
-            }
-            
-            let msg = "";
-            msg += `╔══════════════════════════════════════════╗\n`;
-            msg += `║     ${metaBold('✨ 𝐍𝐄𝐗𝐔𝐒 𝐔𝐋𝐓𝐈𝐌𝐀𝐓𝐄 𝐁𝐎𝐓 ✨')}       ║\n`;
-            msg += `╠══════════════════════════════════════════╣\n`;
-            msg += `║  ${metaBold('⚡ 𝕋𝕙𝕖 𝔾𝕒𝕥𝕖𝕨𝕒𝕪 𝕥𝕠 ℙ𝕠𝕨𝕖𝕣 ⚡')}      ║\n`;
-            msg += `╠══════════════════════════════════════════╣\n`;
-            msg += `║  ${metaBold('📂 𝐋𝐈𝐒𝐓𝐄 𝐃𝐄𝐒 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐄𝐒')}            ║\n`;
-            msg += `╠══════════════════════════════════════════╣\n`;
-
-            // Affichage par catégorie avec graphique
-            const totalCommands = commands.size;
-            const userCommands = Array.from(commands.values()).filter(cmd => cmd.config.role <= role).length;
-            const accessPercent = (userCommands / totalCommands) * 100;
-            
-            Object.keys(categories).sort().forEach((category) => {
-                if (categories[category].commands.length === 0) return;
-                const emojiCat = getCategoryEmoji(category);
-                const catPercent = (categories[category].commands.length / totalCommands) * 100;
-                
-                msg += `\n║  ${emojiCat} ${metaBold(category.toUpperCase())} ${emojiCat}        ║\n`;
-                msg += `║  ${progressBar(catPercent, 20)} ${Math.round(catPercent)}%        ║\n`;
-                
-                const names = categories[category].commands.sort();
-                const chunks = [];
-                for (let i = 0; i < names.length; i += 2) {
-                    const line = names.slice(i, i + 2).map(item => `🔹 ${item}`).join('    ');
-                    msg += `║  ${line.padEnd(44)}║\n`;
-                }
-            });
-            
-            msg += `╠══════════════════════════════════════════╣\n`;
-            msg += `║  ${metaBold('📊 𝐒𝐓𝐀𝐓𝐈𝐒𝐓𝐈𝐐𝐔𝐄𝐒 𝐃𝐔 𝐁𝐎𝐓')}          ║\n`;
-            msg += `╠══════════════════════════════════════════╣\n`;
-            msg += `║  🔢 ${metaBold('Commandes')} : ${totalCommands}                           ║\n`;
-            msg += `║  📊 ${metaBold('Accès')}    : ${accessPercent}% ${progressBar(accessPercent, 15)} ║\n`;
-            msg += `║  ⚡ ${metaBold('Préfixe')}   : ${prefix.padEnd(35)}║\n`;
-            msg += `║  🟢 ${metaBold('Statut')}   : ${metaBold('𝐄𝐍 𝐋𝐈𝐆𝐍𝐄')}                        ║\n`;
-            msg += `║  📅 ${metaBold('Date')}     : ${dateStr.padEnd(35)}║\n`;
-            msg += `║  🕐 ${metaBold('Heure')}    : ${timeStr.padEnd(35)}║\n`;
-            msg += `╠══════════════════════════════════════════╣\n`;
-            msg += `║  💡 ${metaBold('Tape')} ${prefix}help <${metaBold('commande')}> ${metaBold('détails')}   ║\n`;
-            msg += `║  🌐 ${metaBold('Communauté')} : @NexusUltimate                 ║\n`;
-            msg += `╠══════════════════════════════════════════╣\n`;
-            msg += `║  ${metaBold('"La puissance naît de la connexion." 🧠💫')}   ║\n`;
-            msg += `╚══════════════════════════════════════════╝`;
-            
-            await message.reply(msg);
-
-        } else {
-            const commandName = args[0].toLowerCase();
-            const command = commands.get(commandName) || commands.get(aliases.get(commandName));
-
-            if (!command) {
-                const notFound = `
-╔══════════════════════════════════════════╗
-║           ❌ ${metaBold('𝐄𝐑𝐑𝐄𝐔𝐑')} ❌           ║
-╠══════════════════════════════════════════╣
-║  🔍 "${metaBold(commandName)}"                 ║
-║  ${metaBold('𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐄 𝐈𝐍𝐓𝐑𝐎𝐔𝐕𝐀𝐁𝐋𝐄 !')}        ║
-║                                          ║
-║  💡 ${metaBold('Tape')} ${prefix}help ${metaBold('pour voir la liste')}   ║
-╚══════════════════════════════════════════╝`;
-                await message.reply(notFound);
-            } else {
-                const configCommand = command.config;
-                const roleText = roleTextToString(configCommand.role);
-                const author = configCommand.author || "𝐈𝐧𝐜𝐨𝐧𝐧𝐮";
-                const longDescription = configCommand.longDescription?.en || "𝐏𝐚𝐬 𝐝𝐞 𝐝𝐞𝐬𝐜𝐫𝐢𝐩𝐭𝐢𝐨𝐧 𝐝é𝐭𝐚𝐢𝐥𝐥é𝐞.";
-                const guideBody = configCommand.guide?.en || "𝐏𝐚𝐬 𝐝𝐞 𝐠𝐮𝐢𝐝𝐞 𝐝𝐢𝐬𝐩𝐨𝐧𝐢𝐛𝐥𝐞.";
-                const usage = guideBody.replace(/{p}/g, prefix).replace(/{n}/g, configCommand.name);
-                
-                const response = `
-╔══════════════════════════════════════════╗
-║     ${metaBold('📋 𝐃É𝐓𝐀𝐈𝐋𝐒 𝐃𝐄 𝐋𝐀 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐄')}       ║
-╠══════════════════════════════════════════╣
-║                                          ║
-║  🏷️ ${metaBold('𝐍𝐎𝐌')}                                 ║
-║  └─ ${configCommand.name}                              ║
-║                                          ║
-║  📝 ${metaBold('𝐃𝐄𝐒𝐂𝐑𝐈𝐏𝐓𝐈𝐎𝐍')}                         ║
-║  └─ ${longDescription.slice(0, 45)}${longDescription.length > 45 ? '...' : ''}    ║
-║                                          ║
-║  🔄 ${metaBold('𝐀𝐋𝐈𝐀𝐒')}                               ║
-║  └─ ${configCommand.aliases ? configCommand.aliases.slice(0, 3).join(", ") : "𝐀𝐮𝐜𝐮𝐧"}${configCommand.aliases?.length > 3 ? '...' : ''}    ║
-║                                          ║
-║  📌 ${metaBold('𝐕𝐄𝐑𝐒𝐈𝐎𝐍')}                             ║
-║  └─ ${configCommand.version || "1.0"}                  ║
-║                                          ║
-║  🔒 ${metaBold('𝐑Ô𝐋𝐄 𝐑𝐄𝐐𝐔𝐈𝐒')}                         ║
-║  └─ ${roleText}                        ║
-║                                          ║
-║  ⏱️ ${metaBold('𝐓𝐄𝐌𝐏𝐒 (𝐜𝐨𝐨𝐥𝐝𝐨𝐰𝐧)')}                    ║
-║  └─ ${configCommand.countDown || 1} 𝐬𝐞𝐜𝐨𝐧𝐝𝐞(𝐬)                ║
-║                                          ║
-║  ✍️ ${metaBold('𝐀𝐔𝐓𝐄𝐔𝐑')}                              ║
-║  └─ ${author}                                     ║
-║                                          ║
-║  ⚙️ ${metaBold('𝐔𝐓𝐈𝐋𝐈𝐒𝐀𝐓𝐈𝐎𝐍')}                          ║
-║  └─ ${usage.slice(0, 50)}${usage.length > 50 ? '...' : ''}    ║
-║                                          ║
-╠══════════════════════════════════════════╣
-║  ⚡ ${metaBold('𝐍𝐄𝐗𝐔𝐒 𝐔𝐋𝐓𝐈𝐌𝐀𝐓𝐄 𝐁𝐎𝐓')} ${metaBold('⚡')}        ║
-║  🕐 ${timeStr}  │  📅 ${dateStr}                    ║
-╚══════════════════════════════════════════╝`;
-                
-                await message.reply(response);
-            }
-        }
-    },
-};
-
-function getCategoryEmoji(category) {
-    const emojis = {
-        "info": "📚", "fun": "🎮", "game": "🎲", "music": "🎵",
-        "admin": "🛡️", "moderation": "🔨", "utility": "🔧",
-        "tools": "🛠️", "image": "🖼️", "video": "🎬",
-        "nsfw": "🔞", "economy": "💰", "social": "👥",
-        "anime": "🎌", "ai": "🤖", "education": "📖",
-        "search": "🔍", "download": "📥", "config": "⚙️"
-    };
-    return emojis[category.toLowerCase()] || "📦";
+// ═══════════════════════════════════════════════════════════
+// 🔧 UTILITAIRES
+// ═══════════════════════════════════════════════════════════
+function theme(cat) {
+	return CATEGORY_THEME[String(cat).toLowerCase()] || { icon: "🩸", name: String(cat).toUpperCase() };
 }
+
+function rand(arr) {
+	return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function cut(str, n) {
+	str = String(str || "").replace(/\s+/g, " ").trim();
+	return str.length > n ? str.slice(0, n - 1) + "…" : str;
+}
+
+function pick(x) {
+	if (!x) return "";
+	if (typeof x === "string") return x;
+	return x.fr || x.en || Object.values(x)[0] || "";
+}
+
+function getDesc(c) {
+	return pick(c.longDescription) || pick(c.description) || pick(c.shortDescription) || "Aucune description dans les archives.";
+}
+
+function bar(percent, size) {
+	const total = size || 12;
+	const p = Math.max(0, Math.min(100, percent));
+	const filled = Math.round((p / 100) * total);
+	return "█".repeat(filled) + "░".repeat(total - filled);
+}
+
+function buildCategories(role) {
+	const cats = {};
+	for (const [name, value] of commands) {
+		if (!value || !value.config) continue;
+		if ((value.config.role || 0) > role) continue;
+		const cat = value.config.category || "Autres";
+		if (!cats[cat]) cats[cat] = [];
+		cats[cat].push(name);
+	}
+	for (const c of Object.keys(cats)) cats[c].sort();
+	return cats;
+}
+
+function header(title) {
+	return (
+		"╭─────── ☕ ───────╮\n" +
+		"   👁️ " + BOT_NAME + " 👁️\n" +
+		"   " + title + "\n" +
+		"╰─────── ☕ ───────╯\n"
+	);
+}
+
+function footer(prefix) {
+	const now = new Date();
+	const time = now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+	const date = now.toLocaleDateString("fr-FR");
+	return (
+		"\n\n━━━━━━━━━━━━━━━━━━━\n" +
+		"🕐 " + time + "  •  📅 " + date + "\n" +
+		"💡 " + prefix + "help2 <commande> pour les détails\n" +
+		"☕ " + BOT_NAME + " • " + OWNER
+	);
+}
+
+function split(text, max) {
+	if (text.length <= max) return [text];
+	const parts = [];
+	let cur = "";
+	for (const line of text.split("\n")) {
+		if ((cur + "\n" + line).length > max) {
+			parts.push(cur);
+			cur = line;
+		} else {
+			cur = cur ? cur + "\n" + line : line;
+		}
+	}
+	if (cur) parts.push(cur);
+	return parts;
+}
+
+async function send(message, text) {
+	const parts = split(text, MAX_MSG);
+	for (let i = 0; i < parts.length; i++) {
+		await message.reply(parts[i] + (parts.length > 1 ? "\n\n📨 Partie " + (i + 1) + "/" + parts.length : ""));
+	}
+}
+
+// ═══════════════════════════════════════════════════════════
+// 📤 MODULE
+// ═══════════════════════════════════════════════════════════
+module.exports = {
+	config: {
+		name: "help2",
+		aliases: ["menu2", "repaires", "cmds2"],
+		version: "4.0",
+		author: OWNER,
+		countDown: 5,
+		role: 0,
+		shortDescription: { en: "🌀 Menu de l'Anteiku avec statistiques par repaire" },
+		longDescription: { en: "Liste des commandes par repaire, avec la part de chaque repaire, ton niveau d'accès, l'heure et la date." },
+		category: "info",
+		guide: {
+			en:
+				"{pn} → menu avec statistiques par repaire\n" +
+				"{pn} <commande> → détails d'une commande"
+		},
+		priority: 1
+	},
+
+	onStart: async function ({ message, args, event, role }) {
+		const prefix = getPrefix(event.threadID);
+		const input = (args[0] || "").toLowerCase();
+
+		// ═════════════════════════════════════════
+		// 🏚️ MENU PRINCIPAL
+		// ═════════════════════════════════════════
+		if (!input) {
+			const cats = buildCategories(role);
+			const catNames = Object.keys(cats).sort();
+			const accessible = catNames.reduce(function (sum, c) { return sum + cats[c].length; }, 0);
+			const totalAll = commands.size;
+			const accessPercent = totalAll ? Math.round((accessible / totalAll) * 100) : 100;
+
+			let msg = header("🌀 𝐋𝐄𝐒 𝐑𝐄𝐏𝐀𝐈𝐑𝐄𝐒 𝐃𝐄 𝐓𝐎𝐊𝐘𝐎");
+			msg += "\n" + rand(QUOTES) + "\n";
+
+			for (const c of catNames) {
+				const t = theme(c);
+				const share = accessible ? Math.round((cats[c].length / accessible) * 100) : 0;
+				msg += "\n" + t.icon + " 『 " + t.name + " 』";
+				msg += "\n┃ " + bar(share) + " " + share + "% • " + cats[c].length + " cmd";
+				for (let i = 0; i < cats[c].length; i += PER_LINE) {
+					msg += "\n┃ " + cats[c].slice(i, i + PER_LINE).map(function (n) { return "🔹 " + n; }).join("    ");
+				}
+				msg += "\n";
+			}
+
+			msg += "\n📊 𝗦𝗧𝗔𝗧𝗜𝗦𝗧𝗜𝗤𝗨𝗘𝗦";
+			msg += "\n┃ 🔢 Commandes : " + totalAll;
+			msg += "\n┃ 🏚️ Repaires : " + catNames.length;
+			msg += "\n┃ 🔓 Ton accès : " + accessible + "/" + totalAll;
+			msg += "\n┃ " + bar(accessPercent) + " " + accessPercent + "%";
+			msg += "\n┃ 🔑 Préfixe : " + prefix;
+			msg += "\n┃ 🟢 Statut : EN LIGNE";
+			msg += footer(prefix);
+			return send(message, msg);
+		}
+
+		// ═════════════════════════════════════════
+		// 📜 DÉTAILS D'UNE COMMANDE
+		// ═════════════════════════════════════════
+		const command = commands.get(input) || commands.get(aliases.get(input));
+
+		if (!command) {
+			const similar = [];
+			for (const [n] of commands) {
+				if (n.includes(input) || input.includes(n)) similar.push(n);
+			}
+			let msg = "❌ « " + input + " » : " + rand(NOT_FOUND);
+			if (similar.length) msg += "\n\n👁️ Tu cherchais peut-être :\n" + similar.slice(0, 5).map(function (n) { return "┃ 🔹 " + prefix + n; }).join("\n");
+			msg += "\n\n💡 " + prefix + "help2 pour voir tous les repaires.";
+			return message.reply(msg);
+		}
+
+		const c = command.config;
+		const t = theme(c.category);
+		const guide = (pick(c.guide) || prefix + c.name)
+			.replace(/\{pn\}/g, prefix + c.name)
+			.replace(/\{p\}/g, prefix)
+			.replace(/\{n\}/g, c.name);
+
+		let msg = header("📜 𝐃𝐄́𝐓𝐀𝐈𝐋𝐒 𝐃𝐄 𝐋𝐀 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐄");
+		msg += "\n┌── " + t.icon + " ── 『 " + c.name.toUpperCase() + " 』";
+		msg += "\n│ 📝 " + getDesc(c);
+		msg += "\n├── 📌 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗧𝗜𝗢𝗡𝗦";
+		msg += "\n│ 🏚️ Repaire : " + t.name;
+		msg += "\n│ 🔄 Alias : " + (c.aliases && c.aliases.length ? c.aliases.join(", ") : "Aucun");
+		msg += "\n│ 📌 Version : " + (c.version || "1.0");
+		msg += "\n│ 🔒 Accès : " + (ROLE_TEXT[c.role || 0] || ROLE_TEXT[0]);
+		msg += "\n│ ⏱️ Attente : " + (c.countDown || 1) + "s";
+		msg += "\n│ ✍️ Auteur : " + (c.author || "Inconnu");
+		msg += "\n├── ⚙️ 𝗨𝗧𝗜𝗟𝗜𝗦𝗔𝗧𝗜𝗢𝗡";
+		guide.split("\n").forEach(function (l) { msg += "\n│ " + l; });
+		msg += "\n└──────────── 🕸";
+		msg += footer(prefix);
+		return send(message, msg);
+	}
+};
