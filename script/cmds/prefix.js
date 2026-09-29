@@ -1,70 +1,251 @@
+
 const fs = require("fs-extra");
-const { utils } = global;
+
+const CHARVEX = {
+  name: "CHARVEX SYSTEM",
+  line: "━━━━━━━━━━━━━━━━━━━━",
+  icon: "⚡"
+};
+
+function panel(title, lines = []) {
+  return [
+    "╭━━━〔 ⚡ CHARVEX ⚡ 〕━━━╮",
+    `┃ ${title}`,
+    "┣━━━━━━━━━━━━━━━━━━━━",
+    ...lines.map(line => `┃ ${line}`),
+    "╰━━━━━━━━━━━━━━━━━━━━╯"
+  ].join("\n");
+}
 
 module.exports = {
-	config: {
-		name: "prefix",
-		version: "1.5",
-		author: "Master Charbel",
-		countDown: 5,
-		role: 0,
-		description: "Modifier le préfixe de commande (Thème Tokyo Ghoul)",
-		category: "config",
-		guide: "{pn} <nouveau_préfixe> ou {pn} reset"
-	},
+  config: {
+    name: "prefix",
+    aliases: ["setprefix", "pre"],
+    version: "2.0.0",
+    author: "Master Charbel",
+    countDown: 3,
+    role: 0,
+    description: "Gestion du système de préfixe CHARVEX",
+    category: "SYSTEM",
+    guide: {
+      en:
+        "{pn} <préfixe> — Changer le préfixe local\n" +
+        "{pn} <préfixe> -g — Changer le préfixe global\n" +
+        "{pn} reset — Réinitialiser le préfixe local"
+    }
+  },
 
-	langs: {
-		en: {
-			reset: "╭─────── ☕ ───────╮\n   🩸 𝐀𝐍𝐓𝐄𝐈𝐊𝐔 𝐒𝐘𝐒𝐓𝐄𝐌\n╰─────── ☕ ───────╯\n\n Préfixe réinitialisé au signal d'origine : %1\n\n━━━━━━━━━━━━━━━━━━━\n☕ 𝐒𝐇𝐀𝐃𝐎𝐖 𝐆𝐇𝐎𝐔🇱 • Master Charbel",
-			onlyAdmin: "╭─────── ⚔️ ───────╮\n   ❌ 𝐀𝐂𝐂È𝐒 𝐑𝐄𝐒𝐓𝐑𝐄𝐈𝐍𝐓 𝐂𝐂𝐆\n╰─────── ⚔️ ───────╯\n\n Seuls les Inspecteurs en chef (Admins) ont l'autorisation de modifier le préfixe global.\n\n━━━━━━━━━━━━━━━━━━━\n☕ 𝐒𝐇𝐀𝐃𝐎𝐖 𝐆𝐇𝐎𝐔🇱 • Master Charbel",
-			confirmGlobal: "╭─────── 🩸 ───────╮\n   ⚡ 𝐌𝐔𝐓𝐀𝐓𝐈𝐎𝐍 𝐆𝐋𝐎𝐁𝐀𝐋𝐄\n╰─────── 🩸 ───────╯\n\n Réagis avec une émotion à ce message pour valider le nouveau préfixe GLOBAL.\n\n━━━━━━━━━━━━━━━━━━━\n☕ 𝐒𝐇𝐀𝐃𝐎𝐖 𝐆𝐇𝐎𝐔🇱 • Master Charbel",
-			confirmThisThread: "╭─────── ☕ ───────╮\n   ⚡ 𝐌𝐀𝐑𝐐𝐔𝐀𝐆𝐄 𝐃𝐔 𝐓𝐄𝐑𝐑𝐈𝐓𝐎𝐈𝐑𝐄\n╰─────── ☕ ───────╯\n\n Réagis avec une émotion à ce message pour modifier le préfixe de ce SERVEUR.\n\n━━━━━━━━━━━━━━━━━━━\n☕ 𝐒𝐇𝐀𝐃𝐎𝐖 𝐆𝐇𝐎𝐔🇱 • Master Charbel",
-			successGlobal: "╭─────── 👹 ───────╮\n   ✅ 𝐊𝐀𝐊𝐔𝐉𝐀 𝐀𝐂𝐓𝐈𝐕É\n╰─────── 👹 ───────╯\n\n Le préfixe global a muté avec succès vers : %1\n\n━━━━━━━━━━━━━━━━━━━\n☕ 𝐒𝐇𝐀𝐃𝐎𝐖 𝐆𝐇𝐎𝐔🇱 • Master Charbel",
-			successThisThread: "╭─────── 🎭 ───────╮\n   ✅ 𝐌𝐀𝐒𝐐𝐔𝐄 𝐀𝐉𝐔𝐒𝐓É\n╰─────── 🎭 ───────╯\n\n Nouveau préfixe local établi sur ce territoire : %1\n\n━━━━━━━━━━━━━━━━━━━\n☕ 𝐒𝐇𝐀𝐃𝐎𝐖 𝐆𝐇𝐎𝐔🇱 • Master Charbel",
-			myPrefix: "╭─────── ☕ ───────╮\n   🩸 𝐆𝐇𝐎𝐔𝐋 𝐏𝐑𝐄𝐅𝐈𝐗 𝐒𝐓𝐀𝐓𝐔𝐒\n╰─────── ☕ ───────╯\n\n 🌐 Préfixe Global : %1\n 📍 Préfixe Local  : %2\n\n━━━━━━━━━━━━━━━━━━━\n☕ 𝐒𝐇𝐀𝐃𝐎𝐖 𝐆𝐇𝐎𝐔🇱 • Master Charbel"
-		}
-	},
+  langs: {
+    en: {
+      help: panel("PREFIX CONTROL", [
+        "Usage :",
+        "prefix !       → Préfixe local",
+        "prefix ! -g    → Préfixe global",
+        "prefix reset  → Réinitialiser",
+        "",
+        "Created by Master Charbel"
+      ]),
 
-	onStart: async function ({ message, role, args, commandName, event, threadsData, getLang }) {
-		if (!args[0]) return message.SyntaxError();
+      admin: panel("ACCESS DENIED", [
+        "⛔ Autorisation insuffisante.",
+        "Le changement global est réservé",
+        "aux administrateurs autorisés."
+      ]),
 
-		if (args[0] == 'reset') {
-			await threadsData.set(event.threadID, null, "data.prefix");
-			return message.reply(getLang("reset", global.GoatBot.config.prefix));
-		}
+      invalid: panel("INVALID PREFIX", [
+        "❌ Préfixe invalide.",
+        "Choisis entre 1 et 10 caractères.",
+        "Évite les espaces et les retours ligne."
+      ]),
 
-		const newPrefix = args[0];
-		const formSet = { commandName, author: event.senderID, newPrefix };
+      confirmLocal: panel("LOCAL CONFIGURATION", [
+        "Nouvelle configuration détectée.",
+        "Réagis à ce message pour confirmer.",
+        "🌐 Portée : cette conversation",
+        "Créateur : Master Charbel"
+      ]),
 
-		if (args[1] === "-g") {
-			if (role < 2) return message.reply(getLang("onlyAdmin"));
-			formSet.setGlobal = true;
-		} else {
-			formSet.setGlobal = false;
-		}
+      confirmGlobal: panel("GLOBAL CONFIGURATION", [
+        "⚠️ Modification globale demandée.",
+        "Réagis pour confirmer le changement.",
+        "🌐 Portée : tout le bot",
+        "Créateur : Master Charbel"
+      ]),
 
-		return message.reply(args[1] === "-g" ? getLang("confirmGlobal") : getLang("confirmThisThread"), (err, info) => {
-			formSet.messageID = info.messageID;
-			global.GoatBot.onReaction.set(info.messageID, formSet);
-		});
-	},
+      successLocal: panel("LOCAL SYSTEM UPDATED", [
+        "✅ Préfixe de cette conversation : %1",
+        "CHARVEX est prêt."
+      ]),
 
-	onReaction: async function ({ message, threadsData, event, Reaction, getLang }) {
-		const { author, newPrefix, setGlobal } = Reaction;
-		if (event.userID !== author) return;
-        
-		if (setGlobal) {
-			global.GoatBot.config.prefix = newPrefix;
-			fs.writeFileSync(global.client.dirConfig, JSON.stringify(global.GoatBot.config, null, 2));
-			return message.reply(getLang("successGlobal", newPrefix));
-		} else {
-			await threadsData.set(event.threadID, newPrefix, "data.prefix");
-			return message.reply(getLang("successThisThread", newPrefix));
-		}
-	},
+      successGlobal: panel("GLOBAL SYSTEM UPDATED", [
+        "✅ Nouveau préfixe global : %1",
+        "Configuration mise à jour."
+      ]),
 
-	onChat: async function ({ event, message, getLang }) {
-		if (event.body && event.body.toLowerCase() === "prefix")
-			return message.reply(getLang("myPrefix", global.GoatBot.config.prefix, utils.getPrefix(event.threadID)));
-	}
+      reset: panel("SYSTEM RESTORED", [
+        "🔄 Préfixe local réinitialisé.",
+        "Préfixe actuel : %1"
+      ]),
+
+      status: panel("SYSTEM STATUS", [
+        "🌐 Global : %1",
+        "📍 Local : %2",
+        "👑 Créateur : Master Charbel"
+      ]),
+
+      cancelled: panel("REQUEST EXPIRED", [
+        "Cette demande n'est plus disponible."
+      ])
+    }
+  },
+
+  onStart: async function ({
+    message,
+    args,
+    role,
+    commandName,
+    event,
+    threadsData,
+    getLang
+  }) {
+    const threadID = event.threadID;
+
+    // Afficher l'état actuel
+    if (!args[0]) {
+      return message.reply(
+        getLang(
+          "status",
+          global.GoatBot.config.prefix,
+          require("../../../utils").getPrefix
+            ? require("../../../utils").getPrefix(threadID)
+            : global.GoatBot.config.prefix
+        )
+      );
+    }
+
+    // Réinitialisation locale
+    if (args[0].toLowerCase() === "reset") {
+      await threadsData.set(threadID, null, "data.prefix");
+
+      const localPrefix = global.GoatBot.config.prefix;
+
+      return message.reply(getLang("reset", localPrefix));
+    }
+
+    const newPrefix = args[0];
+
+    // Vérification du format
+    if (
+      newPrefix.length > 10 ||
+      /\s/.test(newPrefix) ||
+      /[\r\n]/.test(newPrefix)
+    ) {
+      return message.reply(getLang("invalid"));
+    }
+
+    const setGlobal = args[1] === "-g";
+
+    // Seuls les rôles autorisés peuvent changer le préfixe global
+    if (setGlobal && role < 2) {
+      return message.reply(getLang("admin"));
+    }
+
+    const request = {
+      commandName,
+      author: event.senderID,
+      threadID,
+      newPrefix,
+      setGlobal
+    };
+
+    const text = setGlobal
+      ? getLang("confirmGlobal")
+      : getLang("confirmLocal");
+
+    return message.reply(text, (err, info) => {
+      if (err || !info) {
+        console.error("[CHARVEX PREFIX] Confirmation error:", err);
+        return;
+      }
+
+      request.messageID = info.messageID;
+
+      global.GoatBot.onReaction.set(info.messageID, request);
+    });
+  },
+
+  onReaction: async function ({
+    message,
+    threadsData,
+    event,
+    Reaction,
+    getLang
+  }) {
+    if (!Reaction) return;
+
+    const {
+      author,
+      newPrefix,
+      setGlobal,
+      threadID,
+      messageID
+    } = Reaction;
+
+    // Seul l'auteur de la demande peut confirmer
+    if (String(event.userID) !== String(author)) return;
+
+    // Empêche une confirmation depuis une autre conversation
+    if (String(event.threadID) !== String(threadID)) return;
+
+    try {
+      if (setGlobal) {
+        global.GoatBot.config.prefix = newPrefix;
+
+        fs.writeFileSync(
+          global.client.dirConfig,
+          JSON.stringify(global.GoatBot.config, null, 2),
+          "utf8"
+        );
+
+        global.GoatBot.onReaction.delete(messageID);
+
+        return message.reply(getLang("successGlobal", newPrefix));
+      }
+
+      await threadsData.set(threadID, newPrefix, "data.prefix");
+
+      global.GoatBot.onReaction.delete(messageID);
+
+      return message.reply(getLang("successLocal", newPrefix));
+    } catch (error) {
+      console.error("[CHARVEX PREFIX] Update error:", error);
+
+      global.GoatBot.onReaction.delete(messageID);
+
+      return message.reply(
+        panel("SYSTEM ERROR", [
+          "❌ Impossible d'enregistrer le préfixe.",
+          "Vérifie la configuration du bot."
+        ])
+      );
+    }
+  },
+
+  onChat: async function ({ event, message, getLang, utils }) {
+    if (
+      event.body &&
+      event.body.trim().toLowerCase() === "prefix"
+    ) {
+      const globalPrefix = global.GoatBot.config.prefix;
+      const localPrefix =
+        utils && typeof utils.getPrefix === "function"
+          ? utils.getPrefix(event.threadID)
+          : globalPrefix;
+
+      return message.reply(
+        getLang("status", globalPrefix, localPrefix)
+      );
+    }
+  }
 };
+		
